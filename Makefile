@@ -8,6 +8,6 @@ down:
 
 clean: down
 	rm -rf ./Server/.vagrant
-	rm -rf ./ServerWorker./vagrant
+	rm -rf ./ServerWorker/.vagrant
 
 all: up
