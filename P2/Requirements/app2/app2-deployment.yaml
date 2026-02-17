@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2
+  labels:
+    app: app2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app2
+  template:
+    metadata:
+      labels:
+        app: app2
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo
+        args:
+        - -text
+        - |-
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8"/>
+            <title>App 2</title>
+            <style>
+              body{font-family:Arial,Helvetica,sans-serif;background:#222;color:#fff}
+              .kube{background:#2b8be6;padding:20px;text-align:center}
+              .box{max-width:800px;margin:20px auto;background:#444;padding:20px;border-radius:6px}
+              .meta{font-size:0.9em;color:#ddd}
+            </style>
+          </head>
+          <body>
+            <div class="kube"><h1>Kubernetes</h1></div>
+            <div class="box">
+              <h2>Hello from app2</h2>
+              <p class="meta">pod: $POD_NAME<br/>node: $NODE_NAME</p>
+            </div>
+          </body>
+          </html>
+        ports:
+        - containerPort: 80
