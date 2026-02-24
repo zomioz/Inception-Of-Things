@@ -21,6 +21,6 @@ kubectl apply -f /tmp/manifests/app2/app2-deployment.yaml
 kubectl apply -f /tmp/manifests/app2/app2-service.yaml
 kubectl apply -f /tmp/manifests/app2/app2-expose.yaml
 
-#kubectl apply -f /tmp/manifests/app3/app3-deployment.yaml
-#kubectl apply -f /tmp/manifests/app3/app3-service.yaml
-#kubectl apply -f /tmp/manifests/app3/app3-expose.yaml
+kubectl apply -f /tmp/manifests/app3/app3-deployment.yaml
+kubectl apply -f /tmp/manifests/app3/app3-service.yaml
+kubectl apply -f /tmp/manifests/app3/app3-expose.yaml
