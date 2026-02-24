@@ -40,5 +40,7 @@ spec:
             </div>
           </body>
           </html>
+        - -listen
+        - ":80"
         ports:
         - containerPort: 80
