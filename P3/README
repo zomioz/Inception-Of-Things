@@ -80,3 +80,4 @@ Your GitHub repo has deployment.yaml with image: wil42/playground:v1
 Argo CD deploys this to your cluster
 You edit the GitHub file to image: wil42/playground:v2
 Argo CD detects the change and updates the deployment automatically
+https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/
