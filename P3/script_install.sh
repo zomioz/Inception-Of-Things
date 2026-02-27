@@ -21,7 +21,7 @@ curl -LO https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl
 chmod +x kubectl
 sudo mv kubectl /usr/local/bin/kubectl
 echo "Creating k3d cluster 'mycluster'..."
-k3d cluster create mycluster
+sg docker -c "k3d cluster create mycluster"
 
 echo "Installing ArgoCD..."
 kubectl create namespace argocd

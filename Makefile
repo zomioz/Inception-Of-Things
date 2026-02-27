@@ -11,8 +11,8 @@ p1:
 p2:
 	cd P2 && vagrant up
 
-#p3:
-#	cd P3 && vagrant up
+p3:
+	./P3/script_install.sh
 
 cleanp1:
 	cd P1 && vagrant destroy -f
@@ -22,6 +22,6 @@ cleanp2:
 	cd P2 && vagrant destroy -f
 	cd P2 && rm -rf .vagrant
 
-#cleanp3:
-#	cd P3 && vagrant destroy -f
+cleanp3:
+	./P3/script_uninstall.sh
 
