@@ -1,41 +1,39 @@
 #!/bin/bash
 
-echo "Starting uninstallation process..."
+echo "========================================="
+echo "   Starting cleanup process...           "
+echo "========================================="
 
-# Remove ArgoCD CLI
-echo "Removing ArgoCD CLI..."
-sudo rm /usr/local/bin/argocd || true
+# ─── 1. SUPPRIMER LE CLUSTER K3D ─────────────
+echo "[1/5] Deleting k3d cluster..."
+sudo k3d cluster delete mycluster 2>/dev/null || echo "No cluster to delete"
 
-# Delete ArgoCD resources and namespace
-echo "Removing ArgoCD from Kubernetes..."
-kubectl delete namespace argocd --ignore-not-found=true || true
+# ─── 2. DÉSINSTALLER K3D ─────────────────────
+echo "[2/5] Uninstalling k3d..."
+sudo rm -f /usr/local/bin/k3d
 
-# Delete k3d cluster
-echo "Deleting k3d cluster 'mycluster'..."
-k3d cluster delete mycluster || true
+# ─── 3. DÉSINSTALLER KUBECTL ─────────────────
+echo "[3/5] Uninstalling kubectl..."
+sudo rm -f /usr/local/bin/kubectl
 
-# Remove kubectl
-echo "Removing kubectl..."
-sudo rm /usr/local/bin/kubectl || true
+# ─── 4. DÉSINSTALLER ARGO CD CLI ─────────────
+echo "[4/5] Uninstalling ArgoCD CLI..."
+sudo rm -f /usr/local/bin/argocd
 
-# Remove user from docker group
-echo "Removing user from docker group..."
-sudo gpasswd -d $USER docker || true
-
-# Stop and disable docker
-echo "Stopping and disabling docker..."
-sudo systemctl stop docker || true
-sudo systemctl disable docker || true
-
-# Uninstall docker.io
-echo "Uninstalling docker.io..."
-sudo apt-get remove -y docker.io
+# ─── 5. DÉSINSTALLER DOCKER ──────────────────
+echo "[5/5] Uninstalling Docker..."
+sudo systemctl stop docker 2>/dev/null || true
 sudo apt-get purge -y docker.io
 sudo apt-get autoremove -y
+sudo rm -rf /var/lib/docker
+sudo rm -rf /etc/docker
+sudo rm -f /etc/apt/sources.list.d/docker.list
 
-# Uninstall k3d
-echo "Removing k3d..."
-sudo rm /usr/bin/k3d || true
+# ─── NETTOYAGE KUBECONFIG ─────────────────────
+echo "Cleaning kubeconfig..."
+rm -rf ~/.kube
 
-echo "Uninstallation complete!"
-echo "Note: You may need to log out and back in for group changes to take effect."
+echo ""
+echo "========================================="
+echo "   Cleanup complete! Clean state ✅      "
+echo "========================================="

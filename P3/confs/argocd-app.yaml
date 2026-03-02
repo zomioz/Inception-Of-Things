@@ -6,13 +6,13 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/pirulenc/pirulenc-iot.git
-    targetRevision: HEAD
-    path: confs
+    repoURL: https://github.com/zomioz/Inception-Of-Things.git    
+    targetRevision: lvan-slu
+    path: P3/confs
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
-  suncPolicy:
+  syncPolicy:
     automated:
       prune: true
       selfHeal: true
