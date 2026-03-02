@@ -28,7 +28,7 @@ argocd admin initial-password -n argocd
 ZMHTxVEdkiI2bMCa
 
 # In another terminal, login
-argocd login localhost:8080 --username admin --password -OXUFAJEKc3vP-ez --insecure
+argocd login localhost:8080 --username admin --password 2S7odiV-6ehf-ZBB --insecure
 
 kubectl config set-context --current --namespace=argocd
 argocd app create guestbook --repo https://github.com/argoproj/argocd-example-apps.git --path guestbook --dest-server https://kubernetes.default.svc --dest-namespace default
