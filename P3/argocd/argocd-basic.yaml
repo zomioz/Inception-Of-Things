@@ -7,13 +7,13 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/anveshmuppeda/argo-cd-demo
-    targetRevision: HEAD
-    path: development
+    repoURL: https://github.com/zomioz/Inception-Of-Things
+    targetRevision: project
+    path: deployment
 
   destination: 
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: dev
 
   syncPolicy:
     syncOptions:
