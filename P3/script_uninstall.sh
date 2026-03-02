@@ -2,17 +2,13 @@
 
 echo "Starting uninstallation process..."
 
-# Remove ArgoCD CLI
-echo "Removing ArgoCD CLI..."
-sudo rm /usr/local/bin/argocd || true
-
 # Delete ArgoCD resources and namespace
 echo "Removing ArgoCD from Kubernetes..."
 kubectl delete namespace argocd --ignore-not-found=true || true
 
 # Delete k3d cluster
 echo "Deleting k3d cluster 'mycluster'..."
-k3d cluster delete mycluster || true
+sg docker -c "k3d cluster delete mycluster" || sudo k3d cluster delete mycluster || true
 
 # Remove kubectl
 echo "Removing kubectl..."
@@ -36,6 +32,9 @@ sudo apt-get autoremove -y
 # Uninstall k3d
 echo "Removing k3d..."
 sudo rm /usr/bin/k3d || true
+
+#Delete password file
+rm -f ./P3/argocd/Password
 
 echo "Uninstallation complete!"
 echo "Note: You may need to log out and back in for group changes to take effect."
