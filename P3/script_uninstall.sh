@@ -2,6 +2,10 @@
 
 echo "Starting uninstallation process..."
 
+# Delete dev namespace (where ArgoCD deploys applications)
+echo "Removing dev namespace and deployed applications..."
+kubectl delete namespace dev --ignore-not-found=true || true
+
 # Delete ArgoCD resources and namespace
 echo "Removing ArgoCD from Kubernetes..."
 kubectl delete namespace argocd --ignore-not-found=true || true

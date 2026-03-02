@@ -21,7 +21,7 @@ curl -LO https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl
 chmod +x kubectl
 sudo mv kubectl /usr/local/bin/kubectl
 echo -e '\033[0;32m' "Creating k3d cluster 'mycluster'..." '\033[1;37m'
-sg docker -c "k3d cluster create mycluster"
+sg docker -c "k3d cluster create mycluster -p \"80:80@loadbalancer\" -p \"443:443@loadbalancer\""
 
 echo -e '\033[0;32m' "Installing ArgoCD..." '\033[1;37m'
 kubectl create namespace argocd
@@ -30,8 +30,15 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 echo -e '\033[0;32m' "Waiting for ArgoCD to be ready..." '\033[1;37m'
 kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 
+echo -e '\033[0;32m' "Configuring ArgoCD for insecure HTTP access..." '\033[1;37m'
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+kubectl rollout status deployment/argocd-server -n argocd
+
 echo -e '\033[0;32m' "Deploying ArgoCD Application..." '\033[1;37m'
 kubectl apply -f ./P3/argocd/argocd-basic.yaml
+
+echo -e '\033[0;32m' "Deploying ArgoCD Ingress..." '\033[1;37m'
+kubectl apply -f ./P3/argocd/argocd-ingress.yaml
 
 echo -e '\033[0;32m' "Retrieving ArgoCD admin password..." '\033[1;37m'
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d > ./P3/argocd/Password
