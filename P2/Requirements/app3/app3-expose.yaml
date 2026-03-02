@@ -8,15 +8,3 @@ spec:
       name: app3-service
       port:
         number: 80
-          #  ingressClassName: traefik
-          #  rules:
-          #  - host: app3.com
-          #    http:
-          #      paths:
-          #      - path: /
-          #        pathType: Prefix
-          #        backend:
-          #          service:
-          #            name: app3-service
-          #            port:
-          #              number: 80
