@@ -6,6 +6,7 @@ rules:
 	@echo "Obviously there are make cleanp1/cleanp2/cleanp3 to destroy each parts"
 
 p1:
+	cd P1 && tr -dc A-Za-z0-9 </dev/urandom | head -c 13 | cat > Token_tmp
 	cd P1 && vagrant up
 
 p2:
@@ -17,6 +18,7 @@ p3:
 cleanp1:
 	cd P1 && vagrant destroy -f
 	cd P1 && rm -rf .vagrant
+	cd P1 && rm -f Token_tmp
 
 cleanp2:
 	cd P2 && vagrant destroy -f
