@@ -1,0 +1,153 @@
+# GitLab Minimal Configuration for Low Resources
+# Optimized for local development with ArgoCD integration
+
+global:
+  # Host configuration
+  hosts:
+    domain: gitlab.local
+    https: false
+  
+  # Use minimal resources
+  edition: ce
+  
+  # Ingress configuration
+  ingress:
+    enabled: true
+    class: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
+
+# Disable unnecessary components to save resources
+gitlab-runner:
+  install: false
+
+# Prometheus monitoring (disabled to save resources)
+prometheus:
+  install: false
+
+# Grafana (disabled)
+grafana:
+  install: false
+
+# PostgreSQL - Required (minimal config)
+postgresql:
+  install: true
+  metrics:
+    enabled: false
+  persistence:
+    storageClass: local-path
+    size: 15Gi  # Augmenté pour nouvelle VM avec plus d'espace
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Redis - Required (minimal config)
+redis:
+  install: true
+  metrics:
+    enabled: false
+  master:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# GitLab components with minimal resources
+gitlab:
+  # Webservice - Required
+  webservice:
+    minReplicas: 1
+    maxReplicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  # Gitaly - Git repository storage - Required
+  gitaly:
+    persistence:
+      storageClass: local-path
+      size: 20Gi  # Augmenté pour stocker plus de repos Git
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  # GitLab Shell - Required for Git operations
+  gitlab-shell:
+    minReplicas: 1
+    maxReplicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  
+  # Sidekiq - Background jobs - Required but minimal
+  sidekiq:
+    minReplicas: 1
+    maxReplicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  
+  # Migrations
+  migrations:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+# Minio - Disabled (use local storage instead)
+minio:
+  install: false
+
+# Container Registry - Disabled (not needed for ArgoCD)
+registry:
+  enabled: false
+
+# Nginx Ingress Controller - Use existing traefik
+nginx-ingress:
+  enabled: false
+
+# Certmanager - Disabled (no HTTPS for local)
+certmanager:
+  enabled: false
+
+certmanager-issuer:
+  enabled: false
+  email: admin@gitlab.local  # Factice, requis par le chart même quand désactivé
+
+# GitLab Pages - Disabled
+gitlab-pages:
+  enabled: false
+
+# KAS - Kubernetes Agent Server - Disabled
+gitlab-kas:
+  enabled: false
+
+# Praefect - Disabled (Gitaly HA not needed)
+praefect:
+  enabled: false
