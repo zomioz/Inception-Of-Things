@@ -1,4 +1,0 @@
-curl
-vagrant
-virtualbox
-vagrant plugin install vagrant-vbguest -> A voir, pas necessaire

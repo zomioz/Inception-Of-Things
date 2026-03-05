@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wil-app-gitlab
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # Internal GitLab URL reachable from inside the cluster (port 8181 = HTTP)
+    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/wil-app.git
+    targetRevision: main
+    path: deployment
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    automated:
+      selfHeal: true
+      prune: true

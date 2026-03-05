@@ -1,58 +1,47 @@
 #!/bin/bash
 
-# Colors for output
+# Colors
 GREEN='\033[0;32m'
-RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  GitLab Uninstallation Script${NC}"
-echo -e "${GREEN}========================================${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Confirm uninstallation
-read -p "Are you sure you want to uninstall GitLab? This will delete all data. (yes/no): " CONFIRM
-if [ "$CONFIRM" != "yes" ]; then
-    echo -e "${YELLOW}Uninstallation cancelled.${NC}"
-    exit 0
-fi
+read -p "This will delete GitLab, ArgoCD and all bonus data. Continue? (yes/no): " CONFIRM
+if [ "$CONFIRM" != "yes" ]; then exit 0; fi
 
-# Check if Helm is available
-if ! command -v helm &> /dev/null; then
-    echo -e "${YELLOW}Helm not found. Skipping Helm uninstall.${NC}"
-else
-    # Uninstall GitLab Helm release
-    echo -e "${GREEN}Uninstalling GitLab Helm release...${NC}"
-    helm uninstall gitlab -n gitlab 2>/dev/null || echo -e "${YELLOW}GitLab release not found or already uninstalled.${NC}"
-fi
+# ── 1. Uninstall GitLab ───────────────────────────────────────────────────────
 
-# Delete gitlab namespace
-echo -e "${GREEN}Deleting namespace 'gitlab'...${NC}"
-kubectl delete namespace gitlab --ignore-not-found=true --timeout=120s
+echo -e "${GREEN}Uninstalling GitLab Helm release...${NC}"
+helm uninstall gitlab -n gitlab 2>/dev/null || true
 
-# Wait for namespace deletion
-echo -e "${GREEN}Waiting for namespace deletion...${NC}"
-kubectl wait --for=delete namespace/gitlab --timeout=180s 2>/dev/null || echo -e "${YELLOW}Namespace already deleted.${NC}"
+echo -e "${GREEN}Deleting namespace gitlab...${NC}"
+kubectl delete namespace gitlab --ignore-not-found
 
-# Remove GitLab Helm repository
-if command -v helm &> /dev/null; then
-    echo -e "${GREEN}Removing GitLab Helm repository...${NC}"
-    helm repo remove gitlab 2>/dev/null || echo -e "${YELLOW}GitLab repo not found.${NC}"
-fi
+echo -e "${GREEN}Removing GitLab Helm repository...${NC}"
+helm repo remove gitlab 2>/dev/null || true
 
-# Delete password file
-echo -e "${GREEN}Removing password file...${NC}"
-rm -f ./bonus/GITLAB_ROOT_PASSWORD
+# ── 2. Delete ArgoCD (bonus config) ──────────────────────────────────────────
 
-# Remove PVCs if they still exist (force cleanup)
-echo -e "${GREEN}Cleaning up persistent volume claims...${NC}"
-kubectl delete pvc --all -n gitlab 2>/dev/null || true
+echo -e "${GREEN}Deleting namespace argocd...${NC}"
+kubectl delete namespace argocd --ignore-not-found
 
-# Remove gitlab.local from /etc/hosts
-echo -e "${GREEN}Removing gitlab.local from /etc/hosts...${NC}"
-sudo sed -i '/gitlab.local/d' /etc/hosts 2>/dev/null || echo -e "${YELLOW}Could not modify /etc/hosts${NC}"
+# ── 3. Delete dev namespace (created by ArgoCD sync) ─────────────────────────
 
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  GitLab Uninstallation Complete!${NC}"
-echo -e "${GREEN}========================================${NC}"
-echo ""
+echo -e "${GREEN}Deleting namespace dev...${NC}"
+kubectl delete namespace dev --ignore-not-found
+
+# ── 4. Remove generated files ─────────────────────────────────────────────────
+
+echo -e "${GREEN}Removing generated token files...${NC}"
+rm -f "${SCRIPT_DIR}/GITLAB_ROOT_PASSWORD"
+rm -f "${SCRIPT_DIR}/GITLAB_API_TOKEN"
+
+# ── 5. Remove /etc/hosts entries ─────────────────────────────────────────────
+
+echo -e "${GREEN}Removing entries from /etc/hosts...${NC}"
+sudo sed -i '/gitlab\.local/d' /etc/hosts
+sudo sed -i '/argocd\.local/d' /etc/hosts
+sudo sed -i '/wil42\.local/d' /etc/hosts
+
+echo -e "${GREEN}Done! To restore P3, run: bash ../P3/script_install.sh${NC}"

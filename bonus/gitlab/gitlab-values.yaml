@@ -4,8 +4,14 @@
 global:
   # Host configuration
   hosts:
-    domain: gitlab.local
+    domain: local
     https: false
+    gitlab:
+      name: gitlab.local
+    kas:
+      name: kas.local
+    minio:
+      name: minio.local
   
   # Use minimal resources
   edition: ce
@@ -36,7 +42,7 @@ postgresql:
     enabled: false
   persistence:
     storageClass: local-path
-    size: 15Gi  # Augmenté pour nouvelle VM avec plus d'espace
+    size: 15Gi
   resources:
     requests:
       cpu: 100m
@@ -65,19 +71,24 @@ gitlab:
   webservice:
     minReplicas: 1
     maxReplicas: 1
+    puma:
+      workers: 2
+      threads:
+        min: 2
+        max: 4
     resources:
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 300m
+        memory: 1500Mi
       limits:
-        cpu: 1000m
-        memory: 1Gi
+        cpu: 2000m
+        memory: 2500Mi
   
   # Gitaly - Git repository storage - Required
   gitaly:
     persistence:
       storageClass: local-path
-      size: 20Gi  # Augmenté pour stocker plus de repos Git
+      size: 20Gi
     resources:
       requests:
         cpu: 100m
