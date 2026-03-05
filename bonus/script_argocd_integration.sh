@@ -10,15 +10,16 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 GITLAB_URL="http://gitlab.local"
 GITLAB_INTERNAL="http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
-DEPLOY_SRC="${REPO_ROOT}/Inception-project/deployment"
+DEPLOY_SRC="/home/pirulenc/Documents/Inception-project/deployment"
 
 # ── 1. Create a personal access token ────────────────────────────────────────
 # GitLab disables HTTP Basic Auth on the API since v15.
 # We create the token directly via the Rails console inside the pod.
 
 echo -e "${GREEN}Creating GitLab personal access token...${NC}"
+EXPIRY=$(date -d "+1 year" +%Y-%m-%d)
 GITLAB_TOKEN=$(kubectl exec -n gitlab deploy/gitlab-toolbox -- gitlab-rails runner \
-    'token = User.find_by_username("root").personal_access_tokens.create(name: "argocd-token", scopes: ["api","read_repository","write_repository"], expires_at: "2030-01-01"); puts token.token')
+    "token = User.find_by_username('root').personal_access_tokens.create(name: 'argocd-token', scopes: ['api','read_repository','write_repository'], expires_at: '${EXPIRY}'); puts token.token")
 
 if [ -z "$GITLAB_TOKEN" ]; then
     echo -e "${RED}Failed to create token.${NC}"
@@ -44,7 +45,7 @@ curl -s --request POST "${GITLAB_URL}/api/v4/projects" \
 
 echo -e "${GREEN}Pushing deployment files from ${DEPLOY_SRC}...${NC}"
 
-git init /tmp/wil-app
+git init -b main /tmp/wil-app
 cd /tmp/wil-app
 git remote add origin "http://root:${GITLAB_TOKEN}@gitlab.local/root/wil-app.git"
 git config user.email "root@gitlab.local"
