@@ -1,0 +1,7 @@
+Verifier le bon deploiment de gitlab :
+
+watch kubectl get pods -n gitlab
+
+Verifier si un pod bloque en Pending ou CrashLoopBackOff avec :
+
+kubectl describe pod <nom-du-pod> -n gitlab

@@ -32,10 +32,12 @@ helm install gitlab gitlab/gitlab \
     --timeout 20m \
     --wait
 
-# ── 5. Wait for GitLab webservice ─────────────────────────────────────────────
+# ── 5. Wait for GitLab migrations ────────────────────────────────────────────
+# The migrations job creates the root user and seeds the database.
+# The webservice can start before migrations finish, so we wait for the job.
 
-echo -e "${GREEN}Waiting for GitLab webservice to be ready...${NC}"
-kubectl rollout status deployment/gitlab-webservice-default -n gitlab --timeout=600s
+echo -e "${GREEN}Waiting for GitLab migrations to complete...${NC}"
+kubectl wait --for=condition=complete job -l app=migrations -n gitlab --timeout=600s
 
 # ── 5b. Apply GitLab ingress ──────────────────────────────────────────────────
 
@@ -57,7 +59,18 @@ grep -q "gitlab.local"  /etc/hosts || echo "127.0.0.1 gitlab.local"  | sudo tee 
 grep -q "argocd.local"  /etc/hosts || echo "127.0.0.1 argocd.local"  | sudo tee -a /etc/hosts
 grep -q "wil42.local"   /etc/hosts || echo "127.0.0.1 wil42.local"   | sudo tee -a /etc/hosts
 
-# ── 8. Run ArgoCD integration ─────────────────────────────────────────────────
+# ── 8. Wait for GitLab API ────────────────────────────────────────────────────
+# The webservice pod can be Running while GitLab is still initializing internally.
+# We wait until the API responds before launching the ArgoCD integration.
+
+echo -e "${GREEN}Waiting for GitLab API to be ready...${NC}"
+until curl -s -o /dev/null -w "%{http_code}" http://gitlab.local/api/v4/version | grep -q "200\|401"; do
+    echo "  GitLab API not ready yet, retrying in 10s..."
+    sleep 10
+done
+echo -e "${GREEN}GitLab API is ready.${NC}"
+
+# ── 9. Run ArgoCD integration ─────────────────────────────────────────────────
 
 echo -e "${GREEN}Running ArgoCD integration...${NC}"
 bash "${SCRIPT_DIR}/script_argocd_integration.sh"
