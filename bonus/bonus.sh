@@ -9,7 +9,7 @@ echo "========================================="
 # ─── 1. DOCKER ───────────────────────────────
 echo "[1/8] Installing Docker..."
 sudo apt-get update -y
-sudo apt-get install -y docker.io curl git
+sudo apt-get install -y docker.io curl git python3
 
 echo "Starting and enabling Docker service..."
 sudo systemctl start docker
@@ -38,7 +38,7 @@ echo "[5/8] Creating k3d cluster..."
 sudo docker ps > /dev/null 2>&1
 sudo k3d cluster delete bonus-cluster 2>/dev/null || true
 sudo k3d cluster create bonus-cluster \
-	--agents 3 \
+	--agents 2 \
 	--servers 1 \
 	--k3s-arg "--kubelet-arg=eviction-hard=memory.available<500Mi@agent:*" \
 	--k3s-arg "--kubelet-arg=eviction-hard=memory.available<500Mi@server:0" \
@@ -78,7 +78,6 @@ sudo mv argocd /usr/local/bin/argocd
 echo "[8/8] Installing GitLab with Helm (5-10 minutes)..."
 helm repo add gitlab https://charts.gitlab.io/ 2>/dev/null || true
 helm repo update
-
 helm upgrade --install gitlab gitlab/gitlab \
   --namespace gitlab \
   --set global.hosts.domain=gitlab.local \
@@ -91,8 +90,34 @@ helm upgrade --install gitlab gitlab/gitlab \
   --set prometheus.install=false \
   --set gitlab-runner.install=false \
   --set global.ingress.enabled=false \
+  --set registry.enabled=false \
+  --set gitlab.kas.enabled=false \
+  --set gitlab.mailroom.enabled=false \
+  --set gitlab.gitlab-pages.enabled=false \
   --set gitlab.webservice.replicaCount=1 \
   --set gitlab.sidekiq.replicaCount=1 \
+  --set gitlab.webservice.minReplicas=1 \
+  --set gitlab.webservice.maxReplicas=1 \
+  --set gitlab.sidekiq.minReplicas=1 \
+  --set gitlab.sidekiq.maxReplicas=1 \
+  --set gitlab.webservice.resources.requests.memory=256Mi \
+  --set gitlab.webservice.resources.limits.memory=512Mi \
+  --set gitlab.webservice.resources.requests.cpu=100m \
+  --set gitlab.sidekiq.resources.requests.memory=128Mi \
+  --set gitlab.sidekiq.resources.limits.memory=256Mi \
+  --set gitlab.sidekiq.resources.requests.cpu=50m \
+  --set gitlab.gitaly.resources.requests.memory=128Mi \
+  --set gitlab.gitaly.resources.limits.memory=256Mi \
+  --set gitlab.toolbox.resources.requests.memory=64Mi \
+  --set gitlab.toolbox.resources.limits.memory=128Mi \
+  --set gitlab.gitaly.persistence.size=2Gi \
+  --set postgresql.persistence.size=1Gi \
+  --set redis.master.persistence.size=512Mi \
+  --set minio.persistence.size=1Gi \
+  --set postgresql.primary.resources.requests.memory=128Mi \
+  --set postgresql.primary.resources.limits.memory=256Mi \
+  --set redis.master.resources.requests.memory=64Mi \
+  --set redis.master.resources.limits.memory=128Mi \
   --timeout 600s
 
 echo "Waiting for GitLab to be ready..."
@@ -101,27 +126,67 @@ kubectl wait --for=condition=ready pod \
   -n gitlab \
   --timeout=600s
 
+echo "Waiting for gitlab-shell to be ready..."
+kubectl wait --for=condition=ready pod \
+  -l app=gitlab-shell \
+  -n gitlab \
+  --timeout=300s
+
 # ─── EXPOSE GITLAB ────────────────────────────
 echo "Exposing GitLab..."
+# Port 8181 interne = workhorse (gère git HTTP)
+# Port 8080 interne = webservice direct (API uniquement)
 kubectl port-forward svc/gitlab-webservice-default \
-  -n gitlab 8181:8080 &
+  -n gitlab 8181:8181 &
 PORTFORWARD_PID=$!
-sleep 15
 
-# ─── GITLAB PASSWORD & REPO ──────────────────
+echo "Waiting for GitLab to be accessible..."
+for i in $(seq 1 30); do
+  if curl -s -o /dev/null -w "%{http_code}" http://localhost:8181 | grep -q "200\|302"; then
+    echo "GitLab is accessible!"
+    break
+  fi
+  echo "Attempt $i/30, waiting..."
+  sleep 10
+done
+
+# ─── GITLAB PASSWORD & TOKEN ──────────────────
 echo "Getting GitLab root password..."
 GITLAB_PASSWORD=$(kubectl get secret gitlab-gitlab-initial-root-password \
   -n gitlab \
   -o jsonpath="{.data.password}" | base64 -d)
+echo "Password: $GITLAB_PASSWORD"
 
-echo "Creating GitLab API token..."
-GITLAB_TOKEN=$(curl -s -X POST "http://localhost:8181/api/v4/users/1/personal_access_tokens" \
-  --header "Content-Type: application/json" \
-  --user "root:$GITLAB_PASSWORD" \
-  --data '{
-    "name": "argo-token",
-    "scopes": ["api", "read_repository", "write_repository"]
-  }' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+# Créer le token via rails runner
+echo "Creating GitLab API token via rails runner (this takes ~1 minute)..."
+TOOLBOX_POD=$(kubectl get pod -n gitlab -l app=toolbox -o jsonpath='{.items[0].metadata.name}')
+echo "Toolbox pod: $TOOLBOX_POD"
+
+GITLAB_TOKEN=$(kubectl exec -n gitlab $TOOLBOX_POD -- gitlab-rails runner "
+token = User.find_by_username('root').personal_access_tokens.create(
+  name: 'argo-token',
+  scopes: ['api', 'read_repository', 'write_repository'],
+  expires_at: 365.days.from_now
+)
+puts token.token
+" 2>/dev/null | tail -1)
+
+echo "Token: $GITLAB_TOKEN"
+
+if [ -z "$GITLAB_TOKEN" ]; then
+  echo "ERROR: Token creation failed!"
+  exit 1
+fi
+
+# Vérifier le token
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+  "http://localhost:8181/api/v4/users/1" \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN")
+echo "Token verification: HTTP $HTTP_CODE"
+if [ "$HTTP_CODE" != "200" ]; then
+  echo "ERROR: Token verification failed!"
+  exit 1
+fi
 
 echo "Creating GitLab repository..."
 curl -s -X POST "http://localhost:8181/api/v4/projects" \
@@ -131,10 +196,11 @@ curl -s -X POST "http://localhost:8181/api/v4/projects" \
     "name": "inception-of-things",
     "visibility": "public",
     "initialize_with_readme": false
-  }'
+  }' | python3 -c "import sys,json; d=json.load(sys.stdin); print('Repo:', d.get('web_url', d))"
 
 # ─── CREATE MANIFESTS ────────────────────────
 echo "Creating Kubernetes manifests..."
+rm -rf /tmp/iot-confs
 mkdir -p /tmp/iot-confs/confs
 
 cat <<EOF > /tmp/iot-confs/confs/deployment.yaml
@@ -182,7 +248,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8080/root/inception-of-things.git
+    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/inception-of-things.git
     targetRevision: main
     path: confs
   destination:
@@ -195,19 +261,20 @@ spec:
 EOF
 
 # ─── PUSH TO GITLAB ──────────────────────────
-echo "Pushing code to GitLab local..."
+echo "Pushing code to GitLab..."
 cd /tmp/iot-confs
 git init
 git config user.email "admin@gitlab.local"
 git config user.name "admin"
 git add .
 git commit -m "initial commit"
-git remote add origin http://root:${GITLAB_PASSWORD}@localhost:8181/root/inception-of-things.git
+git remote add origin http://root:${GITLAB_TOKEN}@localhost:8181/root/inception-of-things.git
+git branch -M main
 git push -u origin main
 cd -
 
 # ─── CONFIGURE ARGO CD → GITLAB ──────────────
-echo "Configuring Argo CD to use GitLab local..."
+echo "Configuring Argo CD to use GitLab..."
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -219,9 +286,9 @@ metadata:
     argocd.argoproj.io/secret-type: repository
 stringData:
   type: git
-  url: http://gitlab-webservice-default.gitlab.svc.cluster.local:8080/root/inception-of-things.git
+  url: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/inception-of-things.git
   username: root
-  password: ${GITLAB_PASSWORD}
+  password: ${GITLAB_TOKEN}
 EOF
 
 kubectl apply -f /tmp/iot-confs/confs/argocd-app.yaml
@@ -244,24 +311,22 @@ echo ""
 echo "GitLab URL     : http://localhost:8181"
 echo "GitLab user    : root"
 echo "GitLab password: ${GITLAB_PASSWORD}"
+echo "GitLab token   : ${GITLAB_TOKEN}"
 echo ""
 echo "Argo CD admin password:"
 kubectl get secret argocd-initial-admin-secret \
   -n argocd \
   -o jsonpath="{.data.password}" | base64 --decode
 echo ""
-echo ""
 echo "To access Argo CD UI:"
 echo "  kubectl port-forward svc/argocd-server -n argocd 8080:443"
 echo "  Then open: https://localhost:8080"
 echo ""
 echo "To access GitLab UI:"
-echo "  kubectl port-forward svc/gitlab-webservice-default -n gitlab 8181:8080"
+echo "  kubectl port-forward svc/gitlab-webservice-default -n gitlab 8181:8181"
 echo "  Then open: http://localhost:8181"
 echo ""
 echo "To test GitOps:"
-echo "  1. git clone http://root:${GITLAB_PASSWORD}@localhost:8181/root/inception-of-things.git"
+echo "  1. git clone http://root:${GITLAB_TOKEN}@localhost:8181/root/inception-of-things.git"
 echo "  2. Edit confs/deployment.yaml (v1 → v2)"
 echo "  3. git push → Argo CD auto-deploys!"
-echo ""
-echo "NOTE: Log out and back in (or run 'newgrp docker') for docker group to take effect."
