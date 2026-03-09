@@ -5,3 +5,17 @@ watch kubectl get pods -n gitlab
 Verifier si un pod bloque en Pending ou CrashLoopBackOff avec :
 
 kubectl describe pod <nom-du-pod> -n gitlab
+
+
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+
+
+
+GITLAB_TOKEN=$(cat /home/pirulenc/Documents/Inception-of-things/bonus/GITLAB_API_TOKEN)
+git clone "http://root:${GITLAB_TOKEN}@gitlab.local/root/wil-app.git" /tmp/wil-app
+cp /home/pirulenc/Documents/Inception-project/deployment/*.yaml /tmp/wil-app/deployment/
+cd /tmp/wil-app
+git add .
+git commit -m "Update to v2"
+git push
+rm -rf /tmp/wil-app

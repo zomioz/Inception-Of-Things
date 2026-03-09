@@ -50,7 +50,5 @@ rm -f "${SCRIPT_DIR}/GITLAB_API_TOKEN"
 
 echo -e "${GREEN}Removing entries from /etc/hosts...${NC}"
 sudo sed -i '/gitlab\.local/d' /etc/hosts
-sudo sed -i '/argocd\.local/d' /etc/hosts
-sudo sed -i '/wil42\.local/d' /etc/hosts
 
 echo -e "${GREEN}Done! To restore P3, run: bash ../P3/script_install.sh${NC}"

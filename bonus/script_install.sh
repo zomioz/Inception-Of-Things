@@ -55,9 +55,8 @@ echo -e "${GREEN}Password saved to bonus/GITLAB_ROOT_PASSWORD${NC}"
 # ── 7. Add entries to /etc/hosts ──────────────────────────────────────────────
 
 echo -e "${GREEN}Adding hosts to /etc/hosts...${NC}"
-grep -q "gitlab.local"  /etc/hosts || echo "127.0.0.1 gitlab.local"  | sudo tee -a /etc/hosts
-grep -q "argocd.local"  /etc/hosts || echo "127.0.0.1 argocd.local"  | sudo tee -a /etc/hosts
-grep -q "wil42.local"   /etc/hosts || echo "127.0.0.1 wil42.local"   | sudo tee -a /etc/hosts
+echo "127.0.0.1 gitlab.local"  | sudo tee -a /etc/hosts
+
 
 # ── 8. Wait for GitLab API ────────────────────────────────────────────────────
 # The webservice pod can be Running while GitLab is still initializing internally.

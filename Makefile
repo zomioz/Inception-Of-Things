@@ -10,6 +10,9 @@ p1:
 	cd P1 && vagrant up
 
 p2:
+	echo "192.168.56.110 app1.com" | sudo tee -a /etc/hosts
+	echo "192.168.56.110 app2.com" | sudo tee -a /etc/hosts
+	echo "192.168.56.110 app3.com" | sudo tee -a /etc/hosts
 	cd P2 && vagrant up
 
 p3:
@@ -23,6 +26,9 @@ cleanp1:
 cleanp2:
 	cd P2 && vagrant destroy -f
 	cd P2 && rm -rf .vagrant
+	sudo sed -i '/app1\.com/d' /etc/hosts
+	sudo sed -i '/app2\.com/d' /etc/hosts
+	sudo sed -i '/app3\.com/d' /etc/hosts
 
 cleanp3:
 	./P3/script_uninstall.sh

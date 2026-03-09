@@ -26,8 +26,8 @@ Vagrant.configure("2") do |config|
     worker.vm.network "private_network", ip: "192.168.56.111"
 
     worker.vm.provider "virtualbox" do |vb|
-      vb.cpus = 1
-      vb.memory = 1024
+      vb.cpus = 2
+      vb.memory = 2048
     end
 
     worker.vm.provision "file", source: "Token_tmp", destination: "/tmp/Token"
