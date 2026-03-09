@@ -76,3 +76,6 @@ bash "${SCRIPT_DIR}/script_argocd_integration.sh"
 
 echo -e "${GREEN}Done! GitLab is available at http://gitlab.local${NC}"
 echo -e "${GREEN}Root password: $(cat "${SCRIPT_DIR}/GITLAB_ROOT_PASSWORD")${NC}"
+echo -e "${GREEN}Done! ArgoCD is available at http://argocd.local${NC}"
+echo -e "${GREEN}admin password: $(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d | cat)${NC}"
+

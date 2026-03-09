@@ -10,7 +10,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 GITLAB_URL="http://gitlab.local"
 GITLAB_INTERNAL="http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
-DEPLOY_SRC="/home/pirulenc/Documents/Inception-project/deployment"
+DEPLOY_SRC="${SCRIPT_DIR}/gitlab/repository"
 
 # ── 1. Create a personal access token ────────────────────────────────────────
 # GitLab disables HTTP Basic Auth on the API since v15.
@@ -52,7 +52,7 @@ git config user.email "root@gitlab.local"
 git config user.name "root"
 
 mkdir -p deployment
-cp "${DEPLOY_SRC}"/*.yaml deployment/
+cp -r "${DEPLOY_SRC}/." deployment/
 
 git add .
 git commit -m "Add deployment files"
