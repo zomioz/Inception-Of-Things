@@ -2,6 +2,10 @@
 
 echo "Starting uninstallation process..."
 
+# Delete dev namespace (where ArgoCD deploys applications)
+echo "Removing dev namespace and deployed applications..."
+kubectl delete namespace dev --ignore-not-found=true || true
+
 # Delete ArgoCD resources and namespace
 echo "Removing ArgoCD from Kubernetes..."
 kubectl delete namespace argocd --ignore-not-found=true || true
@@ -35,6 +39,10 @@ sudo rm /usr/bin/k3d || true
 
 #Delete password file
 rm -f ./P3/argocd/Password
+
+#Remove the hosts from /etc/hosts
+sudo sed -i '/argocd\.local/d' /etc/hosts
+sudo sed -i '/wil42\.local/d' /etc/hosts
 
 echo "Uninstallation complete!"
 echo "Note: You may need to log out and back in for group changes to take effect."
