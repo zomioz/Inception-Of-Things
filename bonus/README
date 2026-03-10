@@ -6,6 +6,3 @@ Verifier si un pod bloque en Pending ou CrashLoopBackOff avec :
 
 kubectl describe pod <nom-du-pod> -n gitlab
 
-
-kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
-

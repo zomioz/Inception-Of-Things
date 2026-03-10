@@ -45,6 +45,7 @@ kubectl delete namespace dev --ignore-not-found
 echo -e "${GREEN}Removing generated token files...${NC}"
 rm -f "${SCRIPT_DIR}/GITLAB_ROOT_PASSWORD"
 rm -f "${SCRIPT_DIR}/GITLAB_API_TOKEN"
+rm -rf "${SCRIPT_DIR}/gitlab/repository/.git"
 
 # ── 6. Remove /etc/hosts entries ─────────────────────────────────────────────
 
