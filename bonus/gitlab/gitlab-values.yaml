@@ -1,8 +1,9 @@
-# GitLab Minimal Configuration for Low Resources
-# Optimized for local development with ArgoCD integration
+# __________________GitLab Minimal Configuration for Low Resources
+# __________________Optimized for local development with ArgoCD integration
+
 
 global:
-  # Host configuration
+  # __________________Host configuration
   hosts:
     domain: local
     https: false
@@ -12,30 +13,21 @@ global:
       name: kas.local
     minio:
       name: minio.local
-  
-  # Use minimal resources
+
   edition: ce
   
-  # Ingress configuration
+  # __________________Ingress configuration, most usefull for gitlab applications deploy by Helm.
+  # __________________Gitlab web service default will be correctly ingress after by gitlab-ingress.yaml
   ingress:
     enabled: true
     class: traefik
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: web
 
-# Disable unnecessary components to save resources
-gitlab-runner:
-  install: false
 
-# Prometheus monitoring (disabled to save resources)
-prometheus:
-  install: false
-
-# Grafana (disabled)
-grafana:
-  install: false
-
-# PostgreSQL - Required (minimal config)
+# __________________PostgreSQL
+# __________________Gitlab Database for users, commentary, commit message, params
+# __________________metrics disabled because we dont use Prometheus, and store on hardware local-path
 postgresql:
   install: true
   metrics:
@@ -51,7 +43,10 @@ postgresql:
       cpu: 500m
       memory: 512Mi
 
-# Redis - Required (minimal config)
+
+# __________________Redis
+# __________________Cache memory for gitlab, use for fast acces. Such as online user, logs and tmp files
+# __________________metrics disabled because we dont use Prometheus, only a master because low config
 redis:
   install: true
   metrics:
@@ -65,9 +60,10 @@ redis:
         cpu: 200m
         memory: 256Mi
 
-# GitLab components with minimal resources
+
+# __________________Hearth of gitlab, for web interface and API REST
+# __________________Puma correspond to workers that runs gitlab
 gitlab:
-  # Webservice - Required
   webservice:
     minReplicas: 1
     maxReplicas: 1
@@ -83,8 +79,10 @@ gitlab:
       limits:
         cpu: 2000m
         memory: 2500Mi
-  
-  # Gitaly - Git repository storage - Required
+
+
+# __________________Gitaly
+# __________________Service that handle repository physical storage. Give acces to commands git and store all git logs.
   gitaly:
     persistence:
       storageClass: local-path
@@ -97,7 +95,8 @@ gitlab:
         cpu: 500m
         memory: 512Mi
   
-  # GitLab Shell - Required for Git operations
+# __________________GitLab Shell
+# __________________Use for SSH entry point to gitlab.
   gitlab-shell:
     minReplicas: 1
     maxReplicas: 1
@@ -108,8 +107,10 @@ gitlab:
       limits:
         cpu: 200m
         memory: 256Mi
-  
-  # Sidekiq - Background jobs - Required but minimal
+
+
+# __________________Sidekiq
+# __________________Asynchronous job processor, handle all background work such as notifications email, cleaning all artefacts, stats about repository, etc
   sidekiq:
     minReplicas: 1
     maxReplicas: 1
@@ -120,8 +121,13 @@ gitlab:
       limits:
         cpu: 500m
         memory: 1Gi
-  
-  # Migrations
+
+
+# __________________Migrations
+# __________________its not a service so it is launch only one time
+# __________________Create all PostreSQL data base: tables, index and links
+# __________________Create root user with initial password
+# __________________Set-up default params
   migrations:
     resources:
       requests:
@@ -131,34 +137,59 @@ gitlab:
         cpu: 500m
         memory: 1Gi
 
-# Minio - Disabled (use local storage instead)
+
+# __________________Gitlab Runner (disabled)
+# __________________CI/CD job executor, not needed as ArgoCD handles deployments
+gitlab-runner:
+  install: false
+
+# __________________Prometheus monitoring (disabled)
+# __________________Metrics scraping and alerting system, disabled to save resources
+prometheus:
+  install: false
+
+# __________________Grafana (disabled)
+# __________________Metrics visualization dashboard, disabled as Prometheus is disabled
+grafana:
+  install: false
+
+# __________________Minio (disabled)
+# __________________S3-compatible object storage for artifacts and LFS, using local-path storage instead
 minio:
   install: false
 
-# Container Registry - Disabled (not needed for ArgoCD)
+# __________________Container Registry (disabled)
+# __________________Docker image registry, not needed as ArgoCD pulls from an external registry
 registry:
   enabled: false
 
-# Nginx Ingress Controller - Use existing traefik
+# __________________Nginx Ingress (disabled, using traefik)
+# __________________Default ingress controller bundled with GitLab, replaced by traefik already present in k3s
 nginx-ingress:
   enabled: false
 
-# Certmanager - Disabled (no HTTPS for local)
+# __________________Certmanager (disabled, no HTTPS for local)
+# __________________Automatic TLS certificate manager, not needed as HTTPS is disabled for local use
 certmanager:
   enabled: false
 
+# __________________Certmanager Issuer (disabled, no HTTPS for local)
+# __________________Defines the certificate authority used by certmanager, dummy email required by chart even when disabled
 certmanager-issuer:
   enabled: false
-  email: admin@gitlab.local  # Factice, requis par le chart même quand désactivé
+  email: admin@gitlab.local
 
-# GitLab Pages - Disabled
+# __________________Gitlab Pages (disabled)
+# __________________Static site hosting from gitlab repos, not needed for this ArgoCD setup
 gitlab-pages:
   enabled: false
 
-# KAS - Kubernetes Agent Server - Disabled
+# __________________KAS - Kubernetes Agent Server (disabled)
+# __________________Agent for direct Kubernetes cluster integration with GitLab, not needed as ArgoCD manages the cluster
 gitlab-kas:
   enabled: false
 
-# Praefect - Disabled (Gitaly HA not needed)
+# __________________Praefect (disabled)
+# __________________High availability proxy for Gitaly, not needed on a single local node
 praefect:
   enabled: false
