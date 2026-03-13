@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
     end
     
     server.vm.provision "file", source: "./confs", destination: "/tmp/manifests"
-    server.vm.provision "shell", path: "./Scripts/script_server.sh"
+    server.vm.provision "shell", path: "./scripts/script_server.sh"
 
   end
 
