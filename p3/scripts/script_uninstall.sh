@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+P3_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 echo "Starting uninstallation process..."
 
 
@@ -47,7 +50,7 @@ sudo rm /usr/bin/k3d || true
 
 
 # __________________Delete password file
-rm -f ./P3/argocd/Password
+rm -f "${P3_DIR}/argocd/Password"
 
 
 # __________________Remove the hosts from /etc/hosts

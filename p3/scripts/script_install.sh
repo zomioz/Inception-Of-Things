@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+P3_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 echo -e '\033[0;32m' "Starting installation process..." '\033[1;37m' 
 
 
@@ -60,15 +63,15 @@ kubectl rollout status deployment/argocd-server -n argocd
 
 # __________________Deploying ArgoCD application & ingress
 echo -e '\033[0;32m' "Deploying ArgoCD Application..." '\033[1;37m'
-kubectl apply -f ./P3/argocd/argocd-basic.yaml
+kubectl apply -f "${P3_DIR}/argocd/argocd-basic.yaml"
 echo -e '\033[0;32m' "Deploying ArgoCD Ingress..." '\033[1;37m'
-kubectl apply -f ./P3/argocd/argocd-ingress.yaml
+kubectl apply -f "${P3_DIR}/argocd/argocd-ingress.yaml"
 
 
 # __________________Create a temporary file Password to store ArgoCD password
 echo -e '\033[0;32m' "Retrieving ArgoCD admin password..." '\033[1;37m'
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d > ./P3/argocd/Password
-echo "" >> ./P3/argocd/Password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d > "${P3_DIR}/argocd/Password"
+echo "" >> "${P3_DIR}/argocd/Password"
 
 
 echo -e '\033[0;32m' "Installation complete!" '\033[1;37m'

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BONUS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+GITLAB_CONFS_DIR="${BONUS_DIR}/confs/gitlab"
 
 # __________________Install Helm
 echo -e "'\033[0;32m'Installing Helm...'\033[0m'"
@@ -18,7 +20,7 @@ echo -e "'\033[0;32m'Installing GitLab via Helm (this takes ~5-10 min)...'\033[0
 helm install gitlab gitlab/gitlab \
     --namespace gitlab \
     --create-namespace \
-    --values "${SCRIPT_DIR}/gitlab/gitlab-values.yaml" \
+    --values "${GITLAB_CONFS_DIR}/gitlab-values.yaml" \
     --timeout 20m \
     --wait
 
@@ -32,7 +34,7 @@ kubectl wait --for=condition=complete job -l app=migrations -n gitlab --timeout=
 
 # __________________Apply GitLab ingress
 echo -e "'\033[0;32m'Applying GitLab ingress...'\033[0m'"
-kubectl apply -f "${SCRIPT_DIR}/gitlab/gitlab-ingress.yaml"
+kubectl apply -f "${GITLAB_CONFS_DIR}/gitlab-ingress.yaml"
 
 
 # __________________Save root password

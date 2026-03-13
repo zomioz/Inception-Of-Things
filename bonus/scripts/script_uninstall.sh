@@ -6,6 +6,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BONUS_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 read -p "This will delete GitLab, ArgoCD and all bonus data. Continue? (yes/no): " CONFIRM
 if [ "$CONFIRM" != "yes" ]; then exit 0; fi
@@ -45,11 +46,11 @@ kubectl delete namespace dev --ignore-not-found
 echo -e "${GREEN}Removing generated token files...${NC}"
 rm -f "${SCRIPT_DIR}/GITLAB_ROOT_PASSWORD"
 rm -f "${SCRIPT_DIR}/GITLAB_API_TOKEN"
-rm -rf "${SCRIPT_DIR}/gitlab/repository/.git"
+rm -rf "${BONUS_DIR}/confs/gitlab/repository/.git"
 
 # ── 6. Remove /etc/hosts entries ─────────────────────────────────────────────
 
 echo -e "${GREEN}Removing entries from /etc/hosts...${NC}"
 sudo sed -i '/gitlab\.local/d' /etc/hosts
 
-echo -e "${GREEN}Done! To restore P3, run: bash ../P3/script_install.sh${NC}"
+echo -e "${GREEN}Done! To restore P3, run: bash p3/scripts/script_install.sh${NC}"

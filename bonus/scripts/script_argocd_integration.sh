@@ -2,10 +2,12 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+GITLAB_CONFS_DIR="${REPO_ROOT}/confs/gitlab"
+ARGOCD_CONFS_DIR="${REPO_ROOT}/confs/argocd"
 
 GITLAB_URL="http://gitlab.local"
 GITLAB_INTERNAL="http://gitlab-webservice-default.gitlab.svc.cluster.local:8181"
-DEPLOY_SRC="${SCRIPT_DIR}/gitlab/repository"
+DEPLOY_SRC="${GITLAB_CONFS_DIR}/repository"
 
 
 # __________________Create a gitlab personal access token directly in the pod
@@ -66,10 +68,10 @@ kubectl rollout status deployment/argocd-server -n argocd
 
 # __________________Apply ArgoCD manifests
 echo -e "'\033[0;32m'Applying ArgoCD manifests...'\033[0m'"
-kubectl apply -f "${SCRIPT_DIR}/argocd/argocd-basic.yaml"
-kubectl apply -f "${SCRIPT_DIR}/argocd/argocd-ingress.yaml"
+kubectl apply -f "${ARGOCD_CONFS_DIR}/argocd-basic.yaml"
+kubectl apply -f "${ARGOCD_CONFS_DIR}/argocd-ingress.yaml"
 # __________________sed injects the token generated at step 2
-sed "s/GITLAB_TOKEN_PLACEHOLDER/${GITLAB_TOKEN}/" "${SCRIPT_DIR}/argocd/gitlab-repo-secret.yaml" | kubectl apply -f -
+sed "s/GITLAB_TOKEN_PLACEHOLDER/${GITLAB_TOKEN}/" "${ARGOCD_CONFS_DIR}/gitlab-repo-secret.yaml" | kubectl apply -f -
 
 
 echo -e "'\033[0;32m'Done! ArgoCD is now syncing from: ${GITLAB_INTERNAL}/root/wil-app.git'\033[0m'"
