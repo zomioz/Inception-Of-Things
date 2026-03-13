@@ -14,7 +14,7 @@ helm repo update
 
 
 # __________________Install GitLab
-echo -e "'\033[0;32m'Installing GitLab via Helm (this takes ~15-20 min)...'\033[0m'"
+echo -e "'\033[0;32m'Installing GitLab via Helm (this takes ~5-10 min)...'\033[0m'"
 helm install gitlab gitlab/gitlab \
     --namespace gitlab \
     --create-namespace \
